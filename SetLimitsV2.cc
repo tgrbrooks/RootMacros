@@ -204,21 +204,21 @@ Float_t TheCutV2(Float_t *Data, Size_t VectSize, Float_t Lim1, Float_t Lim2){
 
 // Optimises a cut on two arrays to remove as much of neutbins as possible whilst maintaining over a certain
 // Confidence percentage of nnbarbins events.
-Float_t *OptimiseArrays(Float_t *nnbarbins, Float_t *neutbins, Size_t VectSize,Float_t Confidence, Float_t Accuracy,Float_t BotLim, Float_t UpLim){
+Float_t *OptimiseArrays(Float_t *nnbarbins, Float_t *neutbins, Size_t NnbarVectSize, Size_t NeutVectSize,Float_t Confidence, Float_t Accuracy,Float_t BotLim, Float_t UpLim){
   Float_t B(0.0), Beta(0.0), Alpha(1.0), MinAlpha(1000000000000000000.0), LowLim(0.0), HighLim(0.0), NormFact(0.0);
 
-  for(unsigned int i(0); i < VectSize; i ++){ NormFact += abs(nnbarbins[i]); }
+  for(unsigned int i(0); i < NnbarVectSize; i ++){ NormFact += abs(nnbarbins[i]); }
   std::cout << "\n\nConfidence = " << Confidence << ", Accuracy = " << Accuracy << ", BotLim = " << BotLim << ", UpLim = " << UpLim;
   for(Float_t k(BotLim); k < UpLim; k += Accuracy){ // Loop over lower limit
     for(Float_t j(BotLim); j < UpLim; j += Accuracy){ // Loop over upper limit
       if (k != j && k < j){ // If limits aren't equal and lower limit is smaller than upper limit
 
-        if( k > BotLim) B = TheCutV2(nnbarbins,VectSize,BotLim,k); // Lower part, IS NNBar Outside OF Critical Region
-        Beta = (B + TheCutV2(nnbarbins,VectSize,j,UpLim))/VectSize; // Probability IS NNBar Outside OF Critical Region
+        //if( k > BotLim) B = TheCutV2(nnbarbins,NnbarVectSize,BotLim,k); // Lower part, IS NNBar Outside OF Critical Region
+        //Beta = (B + TheCutV2(nnbarbins,NnbarVectSize,j,UpLim))/NnbarVectSize; // Probability IS NNBar Outside OF Critical Region
         //std::cout << "\n" << k << " to " << j << ". 1-Beta is : " << 1-Beta;// << ", B is : " << B;
 
-        if( (1-Beta) > Confidence ){ 
-          Alpha = TheCutV2(neutbins,VectSize,k,j); // Arbritary Probability IS NEUTRINO in Critical Region = ( Is not Nnbar in Critical region)
+        if( TheCutV2(nnbarbins,NnbarVectSize,k,j)/NnbarVectSize > Confidence ){ 
+          Alpha = TheCutV2(neutbins,NeutVectSize,k,j); // Arbritary Probability IS NEUTRINO in Critical Region = ( Is not Nnbar in Critical region)
           //std::cout << "\nAlpha is : " << Alpha;
           if( Alpha < MinAlpha ){
             MinAlpha = Alpha; LowLim = k; HighLim = j; // Store indices and set new MinAlpha
@@ -265,36 +265,38 @@ void SetLimitsV2(){
   gROOT->ProcessLine(".x lhcbStyle.C"); // Using lhcb Style file
   
   // Get pointers to the two TTree objects
-  TFile *TRootNNbarFile = new TFile("LogLiklihoods/NnbarLogLikelihoods_kam.root");
+  TFile *TRootNNbarFile = new TFile("NnbarLogLikelihoods_kam.root");
   TTree *NNbarTree = (TTree*)TRootNNbarFile->Get("ch_tree");
-  TFile *TRootNeutFile = new TFile("LogLiklihoods/NeutLogLikelihoods_kam.root");
+  TFile *TRootNeutFile = new TFile("NeutLogLikelihoods_kam.root");
   TTree *NeutTree = (TTree*)TRootNeutFile->Get("ch_tree");
   
   NeutTree->SetLineColor(kRed);
   NNbarTree->SetLineColor(kBlue);
   
   // Read in the data from the Logliklihood root files.
-  vector <vector<Double_t>> LLNeut = ReadTreeLL("LogLiklihoods/NeutLogLikelihoods_kam.root","neut"); 
-  vector <vector<Double_t>> LLNnbar = ReadTreeLL("LogLiklihoods/NnbarLogLikelihoods_kam.root","nnbar");
+  vector <vector<Double_t>> LLNeut = ReadTreeLL("NeutLogLikelihoods_kam.root","neut"); 
+  vector <vector<Double_t>> LLNnbar = ReadTreeLL("NnbarLogLikelihoods_kam.root","nnbar");
   
-  Size_t VectSize = 9923;
+  Size_t NeutVectSize = LLNeut[0].size();
+  Size_t NnbarVectSize = LLNnbar[0].size();
   Size_t *Limits = new Float_t[2];
   
   vector <Double_t> LowerLimits, UpperLimits;
   Float_t *NeutArray; Float_t *NnbarArray;
-  NeutArray = new Float_t[VectSize];
-  NnbarArray = new Float_t[VectSize];
-
+  NeutArray = new Float_t[NeutVectSize];
+  NnbarArray = new Float_t[NnbarVectSize];
+  
   for(unsigned int j(0); j < LLNeut.size(); j ++){
     // Set values of arrays to values in Logliklihood root files.
-    for(unsigned int i(0); i < VectSize; i ++){ NeutArray[i] = LLNeut[j][i]; NnbarArray[i] = LLNnbar[j][i]; }
-   
+    for(unsigned int i(0); i < NeutVectSize; i ++){ NeutArray[i] = LLNeut[j][i]; } 
+    for(unsigned int i(0); i < NnbarVectSize; i++){ NnbarArray[i] = LLNnbar[j][i]; }
+    
     // Get the limits through optimisation function
-    Limits = OptimiseArrays(NnbarArray,NeutArray,VectSize,0.90,0.2,-5.0,5.0);
+    Limits = OptimiseArrays(NnbarArray,NeutArray,NnbarVectSize,NeutVectSize,0.95,0.2,-5.0,5.0);
     std::cout << "\nLimits are: " << Limits[0] << ", " << Limits[1];
     
-    std::cout << "\nNeutrinos Removed = " << 1-TheCutV2(NeutArray,VectSize,Limits[0],Limits[1])/VectSize << "%";
-    std::cout << "\nNnbar Removed = " << 1-TheCutV2(NnbarArray,VectSize,Limits[0],Limits[1])/VectSize << "%\n";
+    std::cout << "\nNeutrinos Removed = " << 1-TheCutV2(NeutArray,NeutVectSize,Limits[0],Limits[1])/NeutVectSize << "%";
+    std::cout << "\nNnbar Removed = " << 1-TheCutV2(NnbarArray,NnbarVectSize,Limits[0],Limits[1])/NnbarVectSize << "%\n";
     
     // Push back lower and upper limits onto vectors of lower and upper limits
     LowerLimits.push_back(Limits[0]);
@@ -311,14 +313,14 @@ void SetLimitsV2(){
     Means.push_back( CalcMean(LLNnbar[p]) );
   } 
     
-  RemovedNnbars = DoTheCut(LLNnbar,LowerLimits,UpperLimits,VectSize);
-  RemovedNeutrinos = DoTheCut(LLNeut,LowerLimits,UpperLimits,VectSize);
+  RemovedNnbars = DoTheCut(LLNnbar,LowerLimits,UpperLimits,NnbarVectSize);
+  RemovedNeutrinos = DoTheCut(LLNeut,LowerLimits,UpperLimits,NeutVectSize);
   
   for(unsigned int p(0); p < LLNnbar.size(); p ++){
     MyFile << "\n\n" << NeutCutVariables[p];
     MyFile << "\nMeans = " << Means[p] << ", L = " << LowerLimits[p] << ", U = " << UpperLimits[p];    
-    MyFile << "\nRemovedNeutrinos: " << RemovedNeutrinos[p] << " : " << 100*RemovedNeutrinos[p]/VectSize << "%";
-    MyFile << "\nRemovedNnbar: " << RemovedNnbars[p] << " : " << 100*RemovedNnbars[p]/VectSize << "%";
+    MyFile << "\nRemovedNeutrinos: " << RemovedNeutrinos[p] << " : " << 100*(1-RemovedNeutrinos[p]/NeutVectSize) << "%";
+    MyFile << "\nRemovedNnbar: " << RemovedNnbars[p] << " : " << 100*(1-RemovedNnbars[p]/NnbarVectSize) << "%";
 
     TCanvas *c2 = new TCanvas((NnbarCutVariables[p]).c_str(),"A NAME",900,600);
     NNbarTree->Draw(NnbarCutVariables[p].c_str(),"","E1HIST",10000000000,0);
@@ -363,12 +365,12 @@ void SetLimitsV2(){
  
       MyFile << "\n\n" << NeutCutVariables[Indexes[13-i]] << " AND " << NeutCutVariables[Indexes[12-j]];
   
-      Limits = OptimiseArrays(DoubleLLnnbar,DoubleLLneut,VectSize,0.90,0.5,-5.0,8.0);
+      Limits = OptimiseArrays(DoubleLLnnbar,DoubleLLneut,NnbarVectSize,NeutVectSize,0.95,0.5,-5.0,8.0);
   
       MyFile << "\nLimits are: " << Limits[0] << ", " << Limits[1];
    
-      MyFile << "\nNeutrinos Removed = " << 100*(1-TheCutV2(DoubleLLneut,VectSize,Limits[0],Limits[1])/VectSize) << "%";
-      MyFile << "\nNnbar Removed = " << 100*(1-TheCutV2(DoubleLLnnbar,VectSize,Limits[0],Limits[1])/VectSize) << "%\n";
+      MyFile << "\nNeutrinos Removed = " << 100*(1-TheCutV2(DoubleLLneut,NeutVectSize,Limits[0],Limits[1])/NeutVectSize) << "%";
+      MyFile << "\nNnbar Removed = " << 100*(1-TheCutV2(DoubleLLnnbar,NeutVectSize,Limits[0],Limits[1])/NeutVectSize) << "%\n";
     }
   }
   // TO TEST THE 3 (or more) BEST VARIABLES:
@@ -383,12 +385,12 @@ void SetLimitsV2(){
 
   MyFile << "\n\n" << NeutCutVariables[Indexes[13]] << " AND " << NeutCutVariables[Indexes[12]] << " AND " << NeutCutVariables[Indexes[11]];
  
-  Limits = OptimiseArrays(ManyLLnnbar,ManyLLneut,VectSize,0.90,0.5,-5.0,8.0);
+  Limits = OptimiseArrays(ManyLLnnbar,ManyLLneut,NnbarVectSize,NeutVectSize,0.95,0.5,-5.0,8.0);
   
   MyFile << "\nLimits are: " << Limits[0] << ", " << Limits[1];
    
-  MyFile << "\nNeutrinos Removed = " << 100*(1-TheCutV2(ManyLLneut,VectSize,Limits[0],Limits[1])/VectSize) << "%";
-  MyFile << "\nNnbar Removed = " << 100*(1-TheCutV2(ManyLLnnbar,VectSize,Limits[0],Limits[1])/VectSize) << "%\n";
+  MyFile << "\nNeutrinos Removed = " << 100*(1-TheCutV2(ManyLLneut,NeutVectSize,Limits[0],Limits[1])/NeutVectSize) << "%";
+  MyFile << "\nNnbar Removed = " << 100*(1-TheCutV2(ManyLLnnbar,NnbarVectSize,Limits[0],Limits[1])/NnbarVectSize) << "%\n";
   
 
   
@@ -397,7 +399,8 @@ void SetLimitsV2(){
   TCanvas *c2 = new TCanvas("Combined","A NAME",900,600);
   TH1F* NnbarHisto = new TH1F("neuthist","neuthist",50,-10,10);
   TH1F* NeutHisto = new TH1F("nnbarhist","nnbarhist",50,-10,10);
-  for(unsigned int i(0); i < VectSize; i ++){ NnbarHisto->Fill(ManyLLnnbar[i]); NeutHisto->Fill(ManyLLneut[i]); }
+  for(unsigned int i(0); i < NnbarVectSize; i ++){ NnbarHisto->Fill(ManyLLnnbar[i]);}
+  for(unsigned int i(0); i < NeutVectSize; i ++){ NeutHisto->Fill(ManyLLneut[i]); }
   NnbarHisto->Draw();
   NeutHisto->Draw("same");
   TLine *XMinSig = new TLine(Limits[0],0,Limits[0],2000); XMinSig->Draw(); // c2->GetUymax();
