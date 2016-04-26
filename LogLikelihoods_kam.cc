@@ -223,7 +223,7 @@ vector<vector<float>> ReadTree(string RootFileName, bool isNeut){
 // Function to fit a standard Gaussian PDF
 vector<Double_t> fitGauss(RooRealVar variable, TTree *tree, Double_t meanGuess, Double_t sigGuess){
 
-  //TCanvas *c4 = new TCanvas("c4","",600,400);
+  TCanvas *c4 = new TCanvas("c4","",600,400);
   RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
   RooRealVar mean("mean","mean",meanGuess,0,1000000);
   RooRealVar sigma("sigma","sigma",sigGuess,0.1,5000000);
@@ -235,7 +235,7 @@ vector<Double_t> fitGauss(RooRealVar variable, TTree *tree, Double_t meanGuess, 
   gauss.plotOn(frame1);
   Double_t chi2 = 0;
   chi2 = frame1->chiSquare();
-  //frame1->Draw();
+  frame1->Draw();
 
   std::cout<<"Gaussian chi^2 = "<<chi2<<std::endl;
 
@@ -250,7 +250,7 @@ vector<Double_t> fitGauss(RooRealVar variable, TTree *tree, Double_t meanGuess, 
 // Function to fit a Landau PDF
 vector<Double_t> fitLand(RooRealVar variable, TTree *tree, Double_t meanGuess, Double_t sigGuess){
 
-  //TCanvas *c5 = new TCanvas("c5","",600,400);
+  TCanvas *c5 = new TCanvas("c5","",600,400);
   RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
   RooRealVar mean("mean","mean",meanGuess,10,10000);
   RooRealVar sigma("sigma","sigma",sigGuess,0.1,1000);
@@ -262,7 +262,8 @@ vector<Double_t> fitLand(RooRealVar variable, TTree *tree, Double_t meanGuess, D
   land.plotOn(frame2);
   Double_t neutchi2 = 0;
   neutchi2 = frame2->chiSquare();
-  //frame2->Draw();
+  frame2->GetXaxis()->SetTitle("Y ADC Amplitude (arb)");
+  frame2->Draw();
   std::cout<<"Landau chi^2 = "<<neutchi2<<std::endl;
 
   vector<Double_t> returnVec;
@@ -274,15 +275,15 @@ vector<Double_t> fitLand(RooRealVar variable, TTree *tree, Double_t meanGuess, D
 // Function to fit a Landau and Gaussian PDF
 vector<Double_t> fitLandandGauss(RooRealVar variable, TTree *tree, Double_t LmeanGuess, Double_t LsigGuess, Double_t GmeanGuess, Double_t GsigGuess){
 
-  //TCanvas *c5 = new TCanvas("c5","",600,400);
+  TCanvas *c5 = new TCanvas("c5","",600,400);
   RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
-  RooRealVar Lmean("Lmean","Lmean",LmeanGuess,0,100);
-  RooRealVar Lsigma("Lsigma","Lsigma",LsigGuess,0.1,20);
+  RooRealVar Lmean("Lmean","Lmean",LmeanGuess,10,10000);
+  RooRealVar Lsigma("Lsigma","Lsigma",LsigGuess,0.1,1000);
   RooLandau land("land","land",variable,Lmean,Lsigma);
-  RooRealVar Gmean("Gmean","Gmean",GmeanGuess,22.5,25);
-  RooRealVar Gsigma("Gsigma","Gsigma",GsigGuess,0.1,20);
+  RooRealVar Gmean("Gmean","Gmean",GmeanGuess,10,10000);
+  RooRealVar Gsigma("Gsigma","Gsigma",GsigGuess,0.1,1000);
   RooGaussian gauss("gauss","gauss",variable,Gmean,Gsigma);
-  RooRealVar ngauss("ngauss","#gauss events",175,0.,100000);
+  RooRealVar ngauss("ngauss","#gauss events",150,0.,100000);
   RooRealVar nland("nland","#land events",1000,0.,100000);
   RooAddPdf model("model","g+a",RooArgList(land,gauss),RooArgList(nland,ngauss));
   model.fitTo(data);
@@ -294,7 +295,8 @@ vector<Double_t> fitLandandGauss(RooRealVar variable, TTree *tree, Double_t Lmea
   model.plotOn(frame2,Components(land),LineStyle(kDashed));
   Double_t neutchi2 = 0;
   neutchi2 = frame2->chiSquare();
-  //frame2->Draw();
+  //frame2->GetXaxis()->SetTitle("Y ADC Amplitude (arb)");
+  frame2->Draw();
   std::cout<<"Landau chi^2 = "<<neutchi2<<std::endl;
 
   vector<Double_t> returnVec;
@@ -307,46 +309,10 @@ vector<Double_t> fitLandandGauss(RooRealVar variable, TTree *tree, Double_t Lmea
   return returnVec;
 } // End of fitLandandGauss
 
-// Function to fit a Gaussian and Gaussian PDF
-vector<Double_t> fitGaussandGauss(RooRealVar variable, TTree *tree, Double_t G1meanGuess, Double_t G1sigGuess, Double_t G2meanGuess, Double_t G2sigGuess){
-
-  //TCanvas *c5 = new TCanvas("c5","",600,400);
-  RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
-  RooRealVar G1mean("G1mean","G1mean",G1meanGuess,10,10000);
-  RooRealVar G1sigma("G1sigma","G1sigma",G1sigGuess,0.1,1000);
-  RooGaussian gauss1("gauss1","gauss1",variable,G1mean,G1sigma);
-  RooRealVar G2mean("G2mean","G2mean",G2meanGuess,10,100);
-  RooRealVar G2sigma("G2sigma","G2sigma",G2sigGuess,0.1,100);
-  RooGaussian gauss2("gauss2","gauss2",variable,G2mean,G2sigma);
-  RooRealVar ngauss1("ngauss1","#gauss1 events",150,0.,100000);
-  RooRealVar ngauss2("ngauss2","#gauss2 events",1000,0.,100000);
-  RooAddPdf model("model","g+a",RooArgList(gauss1,gauss2),RooArgList(ngauss1,ngauss2));
-  model.fitTo(data);
-
-  RooPlot* frame2 = variable.frame(Title("Imported TH1 with Poisson error bars"));
-  data.plotOn(frame2);
-  model.plotOn(frame2);
-  model.plotOn(frame2,Components(gauss1),LineStyle(kDashed));
-  model.plotOn(frame2,Components(gauss2),LineStyle(kDashed));
-  Double_t neutchi2 = 0;
-  neutchi2 = frame2->chiSquare();
-  //frame2->Draw();
-  std::cout<<"Double Gauss chi^2 = "<<neutchi2<<std::endl;
-
-  vector<Double_t> returnVec;
-  returnVec.push_back(G1mean.getVal());
-  returnVec.push_back(G1sigma.getVal());
-  returnVec.push_back(G2mean.getVal());
-  returnVec.push_back(G2sigma.getVal());
-  returnVec.push_back(ngauss1.getVal());
-  returnVec.push_back(ngauss2.getVal());
-  return returnVec;
-} // End of fitGaussandGauss
-
 // Function to fit an exponential PDF with a negative coefficient
 Double_t fitExp(RooRealVar variable, TTree *tree, Double_t cGuess){
 
-  //TCanvas *c6 = new TCanvas("c6","",600,400);
+  TCanvas *c6 = new TCanvas("c6","",600,400);
   RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
   RooRealVar c("c","c",cGuess,-1.,0);
   RooExponential exp("exp","exp",variable,c);
@@ -357,7 +323,7 @@ Double_t fitExp(RooRealVar variable, TTree *tree, Double_t cGuess){
   exp.plotOn(frame3);
   Double_t chi2 = 0;
   chi2 = frame3->chiSquare();
-  //frame3->Draw();
+  frame3->Draw();
 
   std::cout<<"Exponential Chi^2 = "<<chi2<<std::endl;
 
@@ -367,7 +333,7 @@ Double_t fitExp(RooRealVar variable, TTree *tree, Double_t cGuess){
 // Function to fit an exponential PDF with a negative coefficient
 vector<Double_t> fitExpandGauss(RooRealVar variable, TTree *tree, Double_t cGuess, Double_t meanGuess, Double_t sigGuess){
 
-  //TCanvas *c6 = new TCanvas("c6","",600,400);
+  TCanvas *c6 = new TCanvas("c6","",600,400);
   RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
   RooRealVar c("c","c",cGuess,-1.,0);
   RooExponential exp("exp","exp",variable,c);
@@ -386,7 +352,7 @@ vector<Double_t> fitExpandGauss(RooRealVar variable, TTree *tree, Double_t cGues
   model.plotOn(frame3,Components(exp),LineStyle(kDashed));
   Double_t chi2 = 0;
   chi2 = frame3->chiSquare();
-  //frame3->Draw();
+  frame3->Draw();
 
   std::cout<<"Exponential Chi^2 = "<<chi2<<std::endl;
 
@@ -403,15 +369,15 @@ vector<Double_t> fitExpandGauss(RooRealVar variable, TTree *tree, Double_t cGues
 // Function to fit an exponential PDF with a negative coefficient
 vector<Double_t> fitExpandGaussandGauss(RooRealVar variable, TTree *tree, Double_t cGuess, Double_t meanGuess, Double_t sigGuess, Double_t mean2Guess, Double_t sig2Guess){
 
-  //TCanvas *c6 = new TCanvas("c6","",600,400);
+  TCanvas *c6 = new TCanvas("c6","",600,400);
   RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
   RooRealVar c("c","c",cGuess,-1.,0);
   RooExponential exp("exp","exp",variable,c);
   RooRealVar mean("mean","mean",meanGuess,0,1000);
   RooRealVar sigma("sigma","sigma",sigGuess,0,100);
   RooGaussian gauss("gauss","gauss",variable,mean,sigma);
-  RooRealVar mean2("mean2","mean2",mean2Guess,0,100000);
-  RooRealVar sigma2("sigma2","sigma2",sig2Guess,0,10000);
+  RooRealVar mean2("mean2","mean2",mean2Guess,0,1000);
+  RooRealVar sigma2("sigma2","sigma2",sig2Guess,0,100);
   RooGaussian gauss2("gauss2","gauss2",variable,mean2,sigma2);
   RooRealVar ngauss("ngauss","#gauss events",150,0.,100000);
   RooRealVar ngauss2("ngauss2","#gauss2 events",150,0.,100000);
@@ -427,7 +393,7 @@ vector<Double_t> fitExpandGaussandGauss(RooRealVar variable, TTree *tree, Double
   model.plotOn(frame3,Components(exp),LineStyle(kDashed));
   Double_t chi2 = 0;
   chi2 = frame3->chiSquare();
-  //frame3->Draw();
+  frame3->Draw();
 
   std::cout<<"Exponential Chi^2 = "<<chi2<<std::endl;
 
@@ -435,11 +401,11 @@ vector<Double_t> fitExpandGaussandGauss(RooRealVar variable, TTree *tree, Double
   returnvec.push_back(c.getVal());
   returnvec.push_back(mean.getVal());
   returnvec.push_back(sigma.getVal());
+  returnvec.push_back(ngauss.getVal());
   returnvec.push_back(mean2.getVal());
   returnvec.push_back(sigma2.getVal());
-  returnvec.push_back(nexp.getVal());
-  returnvec.push_back(ngauss.getVal());
   returnvec.push_back(ngauss2.getVal());
+  returnvec.push_back(nexp.getVal());
 
   return returnvec;
 }// End of fitExpandGauss
@@ -447,7 +413,7 @@ vector<Double_t> fitExpandGaussandGauss(RooRealVar variable, TTree *tree, Double
 // Function to fit a bifurcated Gaussian PDF
 vector<Double_t> fitBifurGauss(RooRealVar variable, TTree *tree, Double_t meanGuess, Double_t sigLGuess, Double_t sigRGuess){
 
-  //TCanvas *c7 = new TCanvas("c7","",600,400);
+  TCanvas *c7 = new TCanvas("c7","",600,400);
   RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
   RooRealVar mean("mean","mean",meanGuess,0,1000000);
   RooRealVar sigmaL("sigmaL","sigmaL",sigLGuess,0.1,5000000);
@@ -460,7 +426,8 @@ vector<Double_t> fitBifurGauss(RooRealVar variable, TTree *tree, Double_t meanGu
   bgauss.plotOn(frame1);
   Double_t chi2 = 0;
   chi2 = frame1->chiSquare();
-  //frame1->Draw();
+  frame1->GetXaxis()->SetTitle("V Hit Number");
+  frame1->Draw();
 
   std::cout<<"Bifurcated Gaussian chi^2 = "<<chi2<<std::endl;
 
@@ -504,35 +471,6 @@ vector<Double_t> fitSixPoly(RooRealVar variable, TTree *tree, Double_t a1Guess, 
 
 }
 
-// Function to fit a Crystal Ball PDF
-vector<Double_t> fitCB(RooRealVar variable, TTree *tree, Double_t meanGuess, Double_t sigGuess, Double_t aGuess, Double_t nGuess){
-
-  //TCanvas *c7 = new TCanvas("c7","",600,400);
-  RooDataSet data("data","data",RooArgSet(variable),Import(*tree));
-  RooRealVar mean("mean","mean",meanGuess,20,40);
-  RooRealVar sigma("sigma","sigma",sigGuess,0.1,15);
-  RooRealVar a("a","a",aGuess,-10,10);
-  RooRealVar n("n","n",nGuess,0,10);
-  RooCBShape CB("CB","CB",variable,mean,sigma,a,n);
-  CB.fitTo(data);
-  
-  RooPlot* frame1 = variable.frame(Title("Imported TH1 with Poisson error bars"));
-  data.plotOn(frame1);
-  CB.plotOn(frame1);
-  Double_t chi2 = 0;
-  chi2 = frame1->chiSquare();
-  //frame1->Draw();
-
-  std::cout<<"Crystal Ball chi^2 = "<<chi2<<std::endl;
-
-  vector<Double_t> returnVec;
-  returnVec.push_back(mean.getVal());
-  returnVec.push_back(sigma.getVal());
-  returnVec.push_back(a.getVal());
-  returnVec.push_back(n.getVal());
-  return returnVec;
-}// End of fitBifurGauss
-
 // ====================== LOG LIKELIHOOD CALCULATION FUCTIONS ============================= //
 
 // Returns single value from bifurcated Gaussian PDF - ONLY USE THIS METHOD IF CAN'T IMPLEMENT MANUALLY - VERY SLOW
@@ -561,32 +499,13 @@ Double_t LandandGauss(Double_t x, Double_t Lmean, Double_t Lsigma, Double_t Gmea
 
 }
 
-Double_t GaussandGauss(Double_t x, Double_t G1mean, Double_t G1sigma, Double_t G2mean, Double_t G2sigma, Double_t ngauss1, Double_t ngauss2){
-
-  Double_t gauss1Ratio = ngauss1/(ngauss1+ngauss2);
-  Double_t gauss2Ratio = ngauss2/(ngauss1+ngauss2);
-  Double_t Value = gauss1Ratio*TMath::Gaus(x,G1mean,G1sigma) + gauss2Ratio*TMath::Gaus(x,G2mean,G2sigma);
-  return Value;
-
-}
-
-Double_t ExpandGaussandGauss(Double_t x, Double_t c, Double_t mean, Double_t sigma, Double_t mean2, Double_t sigma2, Double_t nexp, Double_t ngauss, Double_t ngauss2){
-
-  Double_t expRatio = nexp/(nexp+ngauss+ngauss2);
-  Double_t gaussRatio = ngauss/(nexp+ngauss+ngauss2);
-  Double_t gauss2Ratio = ngauss2/(nexp+ngauss+ngauss2);
-  Double_t Value = expRatio*TMath::Exp(x*c) + gaussRatio*TMath::Gaus(x,mean,sigma) + gauss2Ratio*TMath::Gaus(x,mean2,sigma2);
-  return Value;
-
-}
-
 // ========================== MAIN SCRIPT ============================ //
 
-void LogLikelihoods_numi(){
+void LogLikelihoods_kam(){
 
   // List nnbar and Neutrino files to be merged
   const int NumNbarFiles = 100;  string nnbarFileNames[NumNbarFiles];
-  const int NumNeutFiles = 100; string NeutFileNames[NumNeutFiles];
+  const int NumNeutFiles = 114; string NeutFileNames[NumNeutFiles];
   
   // Define String stream and temporary string to hold the file number
   stringstream ss; string FileNumAsString;
@@ -594,8 +513,10 @@ void LogLikelihoods_numi(){
   // Use string stream to get the file number as a string
   for(unsigned int i(0); i < NumNeutFiles; i ++){
     ss << i; ss >> FileNumAsString; // Convert integer i of loop to string
-    nnbarFileNames[i] = "outputs5_2/Nnbar_output_run5_" + FileNumAsString + ".root";
-    NeutFileNames[i] = "outputs/NuMI_output_" + FileNumAsString + ".root";
+    if(i<NumNbarFiles){
+      nnbarFileNames[i] = "outputs5_2/Nnbar_output_run5_" + FileNumAsString + ".root";
+    }
+    NeutFileNames[i] = "outputs4/Atmo_output_run4_" + FileNumAsString + ".root";
     ss.str(""); ss.clear(); // Clear the string stream
   }
 
@@ -616,8 +537,8 @@ void LogLikelihoods_numi(){
     nnbarTrees.Add(nnbarFileNames[i].c_str()); 
     myfile << nnbarFileNames[i] << "\n"; // Print File names to outputfile
   }
-  nnbarTrees.Merge("allnnbar.root"); // Merge all Chained trees into a single root file
-  RemoveZeros("allnnbar.root");
+  nnbarTrees.Merge("allnnbar_kam.root"); // Merge all Chained trees into a single root file
+  RemoveZeros("allnnbar_kam.root");
    
   // Message to output file
   myfile << "\n\n||Analyser.cc|| The Folllowing " << NumNeutFiles << " Neutrino Files were analysed:\n";
@@ -627,51 +548,49 @@ void LogLikelihoods_numi(){
     NeutTrees.Add(NeutFileNames[i].c_str()); 
     myfile << NeutFileNames[i] << "\n"; // Print File names to outputfile
   }  
-  NeutTrees.Merge("allnumi.root"); // MAY NOT NEED THIS LINE ANYMORE
-  RemoveZeros("allnumi.root");
+  NeutTrees.Merge("allneut_kam.root"); // MAY NOT NEED THIS LINE ANYMORE
+  RemoveZeros("allneut_kam.root");
   
   myfile.close();  
 
   // Open the merged files and retrieve the TTrees
-  TFile *TRootFileNnbar = new TFile("allnnbar.root");  
+  TFile *TRootFileNnbar = new TFile("allnnbar_kam.root");  
   TTree *NnbarTree = (TTree*)TRootFileNnbar->Get("ch_tree");
-  TFile *TRootFileNeut = new TFile("allnumi.root");  
+  TFile *TRootFileNeut = new TFile("allneut_kam.root");  
   TTree *NeutTree = (TTree*)TRootFileNeut->Get("ch_tree");
 
   // Create RooFit variable corresponding to all of the cut variables with the range over which to fit over
-  RooRealVar hitNonnbar("hitNo","hitNo",0,2500); // nnbar gaussian, neut half gaus/landau + peak at 0
-  RooRealVar hitNoneut("hitNo","hitNo",0,2500); // nnbar gaussian, neut half gaus/landau + peak at 0
+  RooRealVar hitNonnbar("hitNo","hitNo",13,2500); // nnbar gaussian, neut half gaus/landau + peak at 0
+  RooRealVar hitNoneut("hitNo","hitNo",0,1500); // nnbar gaussian, neut half gaus/landau + peak at 0
   RooRealVar hitNoUnnbar("hitNoU","hitNoU",0,1000); // nnbar gaus/landau, neut exp + peak at 0
-  RooRealVar hitNoUneut("hitNoU","hitNoU",0,1000); // nnbar gaus/landau, neut exp + peak at 0
+  RooRealVar hitNoUneut("hitNoU","hitNoU",0,500); // nnbar gaus/landau, neut exp + peak at 0
   RooRealVar hitNoVnnbar("hitNoV","hitNoV",0,600); // same as above
-  RooRealVar hitNoVneut("hitNoV","hitNoV",0,1000); // same as above
+  RooRealVar hitNoVneut("hitNoV","hitNoV",0,500); // same as above
   RooRealVar hitNoYnnbar("hitNoY","hitNoY",0,1200); // nnbar gaussian, neut exp
-  RooRealVar hitNoYneut("hitNoY","hitNoY",0,1000); // nnbar gaussian, neut exp
+  RooRealVar hitNoYneut("hitNoY","hitNoY",0,500); // nnbar gaussian, neut exp
 
-  RooRealVar TDCstdnnbar("TDCstd","TDCstd",0,1200); // nnbar gaussian, neut polynomial + peak at 0
-  RooRealVar TDCstdneut("TDCstd","TDCstd",0,1200); // nnbar gaussian, neut polynomial + peak at 0
-  RooRealVar TDCstdUnnbar("TDCstdU","TDCstdU",0,1200); // same as above
-  RooRealVar TDCstdUneut("TDCstdU","TDCstdU",0,900); // same as above
+  RooRealVar TDCstd("TDCstd","TDCstd",0,1200); // nnbar gaussian, neut polynomial + peak at 0
+  RooRealVar TDCstdU("TDCstdU","TDCstdU",0,1200); // same as above
   RooRealVar TDCstdVnnbar("TDCstdV","TDCstdV",0,1500); // same as above
-  RooRealVar TDCstdVneut("TDCstdV","TDCstdV",0,500); // same as above
+  RooRealVar TDCstdVneut("TDCstdV","TDCstdV",0,300); // same as above
   RooRealVar TDCstdYnnbar("TDCstdY","TDCstdY",0,1500); // nnbar gaussian, neut half landau + peak at 0
-  RooRealVar TDCstdYneut("TDCstdY","TDCstdY",0,800); // same as above
+  RooRealVar TDCstdYneut("TDCstdY","TDCstdY",0,500); // same as above
 
   RooRealVar TDCiqrnnbar("TDCiqr","TDCiqr",0,2500); // nnbar short gaussian, neut exp + peak at 0
-  RooRealVar TDCiqrneut("TDCiqr","TDCiqr",0,1500); // nnbar short gaussian, neut exp + peak at 0
+  RooRealVar TDCiqrneut("TDCiqr","TDCiqr",0,1000); // nnbar short gaussian, neut exp + peak at 0
   RooRealVar TDCiqrUnnbar("TDCiqrU","TDCiqrU",0,2500); // nnbar short gaussian, neut exp
-  RooRealVar TDCiqrUneut("TDCiqrU","TDCiqrU",1,600); // nnbar short gaussian, neut exp
+  RooRealVar TDCiqrUneut("TDCiqrU","TDCiqrU",1,400); // nnbar short gaussian, neut exp
   RooRealVar TDCiqrVnnbar("TDCiqrV","TDCiqrV",0,2500); // same as above
-  RooRealVar TDCiqrVneut("TDCiqrV","TDCiqrV",1,600); // same as above
+  RooRealVar TDCiqrVneut("TDCiqrV","TDCiqrV",1,1000); // same as above
   RooRealVar TDCiqrYnnbar("TDCiqrY","TDCiqrY",0,2500); // same as above
-  RooRealVar TDCiqrYneut("TDCiqrY","TDCiqrY",1,800); // same as above
+  RooRealVar TDCiqrYneut("TDCiqrY","TDCiqrY",1,1000); // same as above
 
   RooRealVar ADCampnnbar("ADCamp","ADCamp",14,38); // nnbar gaussian, neut landau 
-  RooRealVar ADCampneut("ADCamp","ADCamp",0,80); // nnbar gaussian, neut landau
+  RooRealVar ADCampneut("ADCamp","ADCamp",0,150); // nnbar gaussian, neut landau
   RooRealVar ADCampUnnbar("ADCampU","ADCampU",14,38); // same as above
   RooRealVar ADCampUneut("ADCampU","ADCampU",0,150); // same as above
   RooRealVar ADCampVnnbar("ADCampV","ADCampV",10,38); // same as above
-  RooRealVar ADCampVneut("ADCampV","ADCampV",0,70); // same as above
+  RooRealVar ADCampVneut("ADCampV","ADCampV",0,150); // same as above
   RooRealVar ADCampYnnbar("ADCampY","ADCampY",0,80); // same as above
   RooRealVar ADCampYneut("ADCampY","ADCampY",0,200); // same as above
 
@@ -682,30 +601,30 @@ void LogLikelihoods_numi(){
   RooRealVar WFintY("WFintY","WFintY",5,400000); //same as above
 
   // Fit all of the hit number distributions
-  vector<Double_t> hitNoNnbarGaussVals = fitGauss(hitNonnbar,NnbarTree,1385,283);
+  /*vector<Double_t> hitNoNnbarGaussVals = fitGauss(hitNonnbar,NnbarTree,1385,283);
   vector<Double_t> hitNoNeutExpVal = fitExpandGauss(hitNoneut,NeutTree,-0.002,5,10);
   vector<Double_t> hitNoUNnbarBifurGaussVals = fitBifurGauss(hitNoUnnbar,NnbarTree,413,74,158);
   vector<Double_t> hitNoUNeutExpVal = fitExpandGauss(hitNoUneut,NeutTree,-0.006,2,10);
-  vector<Double_t> hitNoVNnbarBifurGaussVals = fitBifurGauss(hitNoVnnbar,NnbarTree,341,70,146);
-  vector<Double_t> hitNoVNeutExpVal = fitExpandGauss(hitNoVneut,NeutTree,-0.007,1,10);
+  */vector<Double_t> hitNoVNnbarBifurGaussVals = fitBifurGauss(hitNoVnnbar,NnbarTree,341,70,146);
+  /*vector<Double_t> hitNoVNeutExpVal = fitExpandGauss(hitNoVneut,NeutTree,-0.007,1,10);
   vector<Double_t> hitNoYNnbarBifurGaussVals = fitBifurGauss(hitNoYnnbar,NnbarTree,427,74,173);
   vector<Double_t> hitNoYNeutExpVal = fitExpandGauss(hitNoYneut,NeutTree,-0.005,5,10);
 
   // Fit all of the TDC standard deviation distributions
-  vector<Double_t> TDCstdNnbarGaussVals = fitGauss(TDCstdnnbar,NnbarTree,1000,500);
-  vector<Double_t> TDCstdNeutExpVal = fitGaussandGauss(TDCstdneut,NeutTree,250,100,0,10);
-  vector<Double_t> TDCstdUNnbarGaussVals = fitGauss(TDCstdUnnbar,NnbarTree,1000,500);
-  vector<Double_t> TDCstdUNeutExpVal = fitGaussandGauss(TDCstdUneut,NeutTree,250,100,0,20);
+  vector<Double_t> TDCstdNnbarGaussVals = fitGauss(TDCstd,NnbarTree,1000,500);
+  vector<Double_t> TDCstdNeutExpVal = fitExpandGauss(TDCstd,NeutTree,-0.005,2,10);
+  vector<Double_t> TDCstdUNnbarGaussVals = fitGauss(TDCstdU,NnbarTree,1000,500);
+  vector<Double_t> TDCstdUNeutExpVal = fitExpandGauss(TDCstdU,NeutTree,-0.005,2,10);
   vector<Double_t> TDCstdVNnbarGaussVals = fitGauss(TDCstdVnnbar,NnbarTree,1000,500);
-  vector<Double_t> TDCstdVNeutExpVal = fitGaussandGauss(TDCstdVneut,NeutTree,250,100,0,10);
+  vector<Double_t> TDCstdVNeutExpVal = fitExpandGauss(TDCstdVneut,NeutTree,-0.005,0,10);
   vector<Double_t> TDCstdYNnbarGaussVals = fitGauss(TDCstdYnnbar,NnbarTree,1000,500);
-  vector<Double_t> TDCstdYNeutExpVal = fitGaussandGauss(TDCstdYneut,NeutTree,250,100,0,10);
+  vector<Double_t> TDCstdYNeutExpVal = fitExpandGauss(TDCstdYneut,NeutTree,-0.006,0,10);
 
   // Fit all of the TDC interquartile range distributions
   vector<Double_t> TDCiqrNnbarBifurGaussVals = fitBifurGauss(TDCiqrnnbar,NnbarTree,1000,250,250);
   vector<Double_t> TDCiqrNeutExpVal = fitExpandGauss(TDCiqrneut,NeutTree,-0.006,0,10);
   vector<Double_t> TDCiqrUNnbarBifurGaussVals = fitBifurGauss(TDCiqrUnnbar,NnbarTree,1000,250,250);
-  vector<Double_t> TDCiqrUNeutExpVal = fitExpandGauss(TDCiqrUneut,NeutTree,-0.006,0,10);
+  vector<Double_t> TDCiqrUNeutExpVal = fitExpandGauss(TDCiqrUneut,NeutTree,-0.006,20,15);
   vector<Double_t> TDCiqrVNnbarBifurGaussVals = fitBifurGauss(TDCiqrVnnbar,NnbarTree,1000,250,250);
   vector<Double_t> TDCiqrVNeutExpVal = fitExpandGauss(TDCiqrVneut,NeutTree,-0.006,0,10);
   vector<Double_t> TDCiqrYNnbarBifurGaussVals = fitBifurGauss(TDCiqrYnnbar,NnbarTree,1000,250,250);
@@ -713,33 +632,29 @@ void LogLikelihoods_numi(){
 
   // Fit all of the mean ADC amplitude distributions
   vector<Double_t> ADCampGaussvals = fitBifurGauss(ADCampnnbar,NnbarTree,25,250,250);
-  vector<Double_t> ADCampLandvals;// = fitLandandGauss(ADCampneut,NeutTree,30,4,24,3.5); // DOESN'T WORK
-  ADCampLandvals.push_back(30); ADCampLandvals.push_back(4); ADCampLandvals.push_back(22.1449); ADCampLandvals.push_back(3.5); ADCampLandvals.push_back(1000); ADCampLandvals.push_back(150);
+  vector<Double_t> ADCampLandvals = fitLand(ADCampneut,NeutTree,30,500);
   vector<Double_t> ADCampUGaussvals = fitBifurGauss(ADCampUnnbar,NnbarTree,25,250,250);
-  vector<Double_t> ADCampULandvals;// = fitLandandGauss(ADCampUneut,NeutTree,35,7,25,5);
-  ADCampULandvals.push_back(35); ADCampULandvals.push_back(7); ADCampULandvals.push_back(22.2156); ADCampULandvals.push_back(5); ADCampULandvals.push_back(1000); ADCampULandvals.push_back(150);
+  vector<Double_t> ADCampULandvals = fitLand(ADCampUneut,NeutTree,30,500);
   vector<Double_t> ADCampVGaussvals = fitLandandGauss(ADCampVnnbar,NnbarTree,17,150,20,150);
-  vector<Double_t> ADCampVLandvals;// = fitLandandGauss(ADCampVneut,NeutTree,21.5,3.5,16,2);
-  ADCampVLandvals.push_back(21.5); ADCampVLandvals.push_back(3.5); ADCampVLandvals.push_back(16.6863); ADCampVLandvals.push_back(2); ADCampVLandvals.push_back(1000); ADCampVLandvals.push_back(150);
+  vector<Double_t> ADCampVLandvals = fitLandandGauss(ADCampVneut,NeutTree,20,100,20,100);
   vector<Double_t> ADCampYGaussvals = fitLandandGauss(ADCampYnnbar,NnbarTree,30,100,30,100);
-  vector<Double_t> ADCampYLandvals;// = fitLandandGauss(ADCampYneut,NeutTree,34.5,6.5,22.5,4);
-  ADCampYLandvals.push_back(34.5); ADCampYLandvals.push_back(6.5); ADCampYLandvals.push_back(22.6519); ADCampYLandvals.push_back(4); ADCampYLandvals.push_back(1000); ADCampYLandvals.push_back(175);
+  vector<Double_t> ADCampYLandvals = fitLand(ADCampYneut,NeutTree,30,500);
 
   // Fit all of the integrated waveform distributions
   vector<Double_t> WFintNeutExpVal = fitExpandGauss(WFintneut,NeutTree,-0.000006,2000,1000);
   vector<Double_t> WFintNnbarGaussVals = fitGauss(WFintnnbar,NnbarTree,550000,100000);
   vector<Double_t> WFintUNeutExpVal = fitExpandGauss(WFintU,NeutTree,-0.000006,1000,1000);
   vector<Double_t> WFintUNnbarGaussVals = fitGauss(WFintU,NnbarTree,200000,100000);
-  vector<Double_t> WFintVNeutExpVal = fitExpandGaussandGauss(WFintV,NeutTree,-0.000006,500,500,5000,500);
+  vector<Double_t> WFintVNeutExpVal = fitExpandGauss(WFintV,NeutTree,-0.000006,500,500);
   vector<Double_t> WFintVNnbarGaussVals = fitGauss(WFintV,NnbarTree,200000,100000);
   vector<Double_t> WFintYNeutExpVal = fitExpandGauss(WFintY,NeutTree,-0.000006,500,500);
   vector<Double_t> WFintYNnbarGaussVals = fitGauss(WFintY,NnbarTree,200000,100000);
 
   // Get data from files
-  vector<vector<float>> NnbarEvents = ReadTree("allnnbar.root",false);
-  vector<vector<float>> NeutEvents = ReadTree("allnumi.root",true);
+  vector<vector<float>> NnbarEvents = ReadTree("allnnbar_kam.root",false);
+  vector<vector<float>> NeutEvents = ReadTree("allneut_kam.root",true);
   
-  TFile *OutFile2 = new TFile("NnbarLogLikelihoods_numi.root","RECREATE");
+  TFile *OutFile2 = new TFile("NnbarLogLikelihoods_kam.root","RECREATE");
   TTree* _ll_nnbar_tree;
   Double_t _ll_nnbarhnu, _ll_nnbarhnv, _ll_nnbarhny, _ll_nnbartsu, _ll_nnbartsv, _ll_nnbartsy, _ll_nnbartiu, _ll_nnbartiv, _ll_nnbartiy, _ll_nnbaraau, _ll_nnbaraav, _ll_nnbaraay, _ll_nnbarwfu, _ll_nnbarwfv, _ll_nnbarwfy;
 
@@ -767,7 +682,7 @@ void LogLikelihoods_numi(){
   // Initialise removed counters
   int removedneut = 0;
   int removednnbar = 0; 
-std::cout<<"gets here\n\n";
+
   // Loop over all of the events (10000) - MAKE SURE FIRST LL IS = INSTEAD OF +=
   for(int k=0; k<NnbarEvents[0].size(); k++){
 
@@ -789,17 +704,17 @@ std::cout<<"gets here\n\n";
   
     // U plane TDC standard deviation log likelihoods
     Double_t pnnbarnnbartsu = TMath::Gaus(NnbarEvents[5][k], TDCstdUNnbarGaussVals[0], TDCstdUNnbarGaussVals[1]);
-    Double_t pnnbarneuttsu = GaussandGauss(NnbarEvents[5][k],TDCstdUNeutExpVal[0],TDCstdUNeutExpVal[1],TDCstdUNeutExpVal[2],TDCstdUNeutExpVal[3],TDCstdUNeutExpVal[4],TDCstdUNeutExpVal[5]);
+    Double_t pnnbarneuttsu = ExpandGauss(NnbarEvents[5][k],TDCstdUNeutExpVal[0],TDCstdUNeutExpVal[1],TDCstdUNeutExpVal[2],TDCstdUNeutExpVal[3],TDCstdUNeutExpVal[4]);
     _ll_nnbartsu = log(pnnbarnnbartsu/pnnbarneuttsu);
 
     // V plane TDC standard deviation log likelihoods
     Double_t pnnbarnnbartsv = TMath::Gaus(NnbarEvents[6][k], TDCstdVNnbarGaussVals[0], TDCstdVNnbarGaussVals[1]);
-    Double_t pnnbarneuttsv = GaussandGauss(NnbarEvents[6][k],TDCstdVNeutExpVal[0],TDCstdVNeutExpVal[1],TDCstdVNeutExpVal[2],TDCstdVNeutExpVal[3],TDCstdVNeutExpVal[4],TDCstdVNeutExpVal[5]);
+    Double_t pnnbarneuttsv = ExpandGauss(NnbarEvents[6][k],TDCstdVNeutExpVal[0],TDCstdVNeutExpVal[1],TDCstdVNeutExpVal[2],TDCstdVNeutExpVal[3],TDCstdVNeutExpVal[4]);
     _ll_nnbartsv = log(pnnbarnnbartsv/pnnbarneuttsv);
 
     // Y plane TDC standard deviation log likelihoods
     Double_t pnnbarnnbartsy = TMath::Gaus(NnbarEvents[7][k], TDCstdYNnbarGaussVals[0], TDCstdYNnbarGaussVals[1]);
-    Double_t pnnbarneuttsy = GaussandGauss(NnbarEvents[7][k],TDCstdYNeutExpVal[0],TDCstdYNeutExpVal[1],TDCstdYNeutExpVal[2],TDCstdYNeutExpVal[3],TDCstdYNeutExpVal[4],TDCstdYNeutExpVal[5]);
+    Double_t pnnbarneuttsy = ExpandGauss(NnbarEvents[7][k],TDCstdYNeutExpVal[0],TDCstdYNeutExpVal[1],TDCstdYNeutExpVal[2],TDCstdYNeutExpVal[3],TDCstdYNeutExpVal[4]);
     _ll_nnbartsy = log(pnnbarnnbartsy/pnnbarneuttsy);
 
 
@@ -821,7 +736,7 @@ std::cout<<"gets here\n\n";
 
     // U plane mean ADC amplitude log likelihoods
     Double_t pnnbarnnbaraau = BifurGauss(NnbarEvents[13][k], ADCampUGaussvals[0], ADCampUGaussvals[1], ADCampUGaussvals[2]);
-    Double_t pnnbarneutaau = LandandGauss(NnbarEvents[13][k], ADCampULandvals[0], ADCampULandvals[1], ADCampULandvals[2], ADCampULandvals[3], ADCampULandvals[4], ADCampULandvals[5]);
+    Double_t pnnbarneutaau = TMath::Landau(NnbarEvents[13][k], ADCampULandvals[0], ADCampULandvals[1]);
     _ll_nnbaraau = log(pnnbarnnbaraau/pnnbarneutaau);
 
     // V plane mean ADC amplitude log likelihoods
@@ -831,7 +746,7 @@ std::cout<<"gets here\n\n";
 
     // Y plane mean ADC amplitude log likelihoods
     Double_t pnnbarnnbaraay = LandandGauss(NnbarEvents[15][k], ADCampYGaussvals[0], ADCampYGaussvals[1], ADCampYGaussvals[2], ADCampYGaussvals[3], ADCampYGaussvals[4], ADCampYGaussvals[5]);
-    Double_t pnnbarneutaay = LandandGauss(NnbarEvents[15][k], ADCampYLandvals[0], ADCampYLandvals[1], ADCampYLandvals[2], ADCampYLandvals[3], ADCampYLandvals[4], ADCampYLandvals[5]);
+    Double_t pnnbarneutaay = TMath::Landau(NnbarEvents[15][k], ADCampYLandvals[0], ADCampYLandvals[1]);
     _ll_nnbaraay = log(pnnbarnnbaraay/pnnbarneutaay);
 
 
@@ -842,7 +757,7 @@ std::cout<<"gets here\n\n";
 
     // V plane integrated waveform log likelihoods
     Double_t pnnbarnnbarwfv = TMath::Gaus(NnbarEvents[18][k], WFintVNnbarGaussVals[0], WFintVNnbarGaussVals[1]);
-    Double_t pnnbarneutwfv = ExpandGaussandGauss(NnbarEvents[18][k],WFintVNeutExpVal[0],WFintVNeutExpVal[1],WFintVNeutExpVal[2],WFintVNeutExpVal[3],WFintVNeutExpVal[4],WFintVNeutExpVal[5],WFintVNeutExpVal[6],WFintVNeutExpVal[7]);
+    Double_t pnnbarneutwfv = ExpandGauss(NnbarEvents[18][k],WFintVNeutExpVal[0],WFintVNeutExpVal[1],WFintVNeutExpVal[2],WFintVNeutExpVal[3],WFintVNeutExpVal[4]);
     _ll_nnbarwfv = log(pnnbarnnbarwfv/pnnbarneutwfv);
 
     // Y plane integrated waveform log likelihoods
@@ -860,7 +775,7 @@ std::cout<<"gets here\n\n";
   _ll_nnbar_tree->Write();
   OutFile2->Close();
   
-  TFile *OutFile3 = new TFile("NeutLogLikelihoods_numi.root","RECREATE");
+  TFile *OutFile3 = new TFile("NeutLogLikelihoods_kam.root","RECREATE");
   TTree* _ll_neut_tree;
   Double_t _ll_neuthnu, _ll_neuthnv, _ll_neuthny, _ll_neuttsu, _ll_neuttsv, _ll_neuttsy, _ll_neuttiu, _ll_neuttiv, _ll_neuttiy, _ll_neutaau, _ll_neutaav, _ll_neutaay, _ll_neutwfu, _ll_neutwfv, _ll_neutwfy;
 
@@ -901,17 +816,17 @@ std::cout<<"gets here\n\n";
 
   
     // U plane TDC standard deviation log likelihoods
-    Double_t pneutneuttsu = GaussandGauss(NeutEvents[5][k],TDCstdUNeutExpVal[0],TDCstdUNeutExpVal[1],TDCstdUNeutExpVal[2],TDCstdUNeutExpVal[3],TDCstdUNeutExpVal[4],TDCstdUNeutExpVal[5]);
+    Double_t pneutneuttsu = ExpandGauss(NeutEvents[5][k],TDCstdUNeutExpVal[0],TDCstdUNeutExpVal[1],TDCstdUNeutExpVal[2],TDCstdUNeutExpVal[3],TDCstdUNeutExpVal[4]);
     Double_t pneutnnbartsu = TMath::Gaus(NeutEvents[5][k], TDCstdUNnbarGaussVals[0], TDCstdUNnbarGaussVals[1]);
     _ll_neuttsu = log(pneutnnbartsu/pneutneuttsu);
 
     // V plane TDC standard deviation log likelihoods
-    Double_t pneutneuttsv = GaussandGauss(NeutEvents[6][k],TDCstdVNeutExpVal[0],TDCstdVNeutExpVal[1],TDCstdVNeutExpVal[2],TDCstdVNeutExpVal[3],TDCstdVNeutExpVal[4],TDCstdVNeutExpVal[4]);
+    Double_t pneutneuttsv = ExpandGauss(NeutEvents[6][k],TDCstdVNeutExpVal[0],TDCstdVNeutExpVal[1],TDCstdVNeutExpVal[2],TDCstdVNeutExpVal[3],TDCstdVNeutExpVal[4]);
     Double_t pneutnnbartsv = TMath::Gaus(NeutEvents[6][k], TDCstdVNnbarGaussVals[0], TDCstdVNnbarGaussVals[1]);
     _ll_neuttsv = log(pneutnnbartsv/pneutneuttsv);
 
     // Y plane TDC standard deviation log likelihoods
-    Double_t pneutneuttsy = GaussandGauss(NeutEvents[7][k],TDCstdYNeutExpVal[0],TDCstdYNeutExpVal[1],TDCstdYNeutExpVal[2],TDCstdYNeutExpVal[3],TDCstdYNeutExpVal[4],TDCstdYNeutExpVal[4]);
+    Double_t pneutneuttsy = ExpandGauss(NeutEvents[7][k],TDCstdYNeutExpVal[0],TDCstdYNeutExpVal[1],TDCstdYNeutExpVal[2],TDCstdYNeutExpVal[3],TDCstdYNeutExpVal[4]);
     Double_t pneutnnbartsy = TMath::Gaus(NeutEvents[7][k], TDCstdYNnbarGaussVals[0], TDCstdYNnbarGaussVals[1]);
     _ll_neuttsy = log(pneutnnbartsy/pneutneuttsy);
 
@@ -933,8 +848,8 @@ std::cout<<"gets here\n\n";
 
 
     // U plane mean ADC amplitude log likelihoods
-    Double_t pneutneutaau = LandandGauss(NeutEvents[13][k], ADCampULandvals[0], ADCampULandvals[1], ADCampUGaussvals[2], ADCampUGaussvals[3], ADCampUGaussvals[4], ADCampUGaussvals[5]);
     Double_t pneutnnbaraau = BifurGauss(NeutEvents[13][k], ADCampUGaussvals[0], ADCampUGaussvals[1], ADCampUGaussvals[2]);
+    Double_t pneutneutaau = TMath::Landau(NeutEvents[13][k], ADCampULandvals[0], ADCampULandvals[1]);
     if(pneutnnbaraau==0){pneutnnbaraau = 4.06461e-305;}
     _ll_neutaau = log(pneutnnbaraau/pneutneuttiy);
 
@@ -944,7 +859,7 @@ std::cout<<"gets here\n\n";
     _ll_neutaav = log(pneutnnbaraav/pneutneutaav);
 
     // Y plane mean ADC amplitude log likelihoods
-    Double_t pneutneutaay = LandandGauss(NeutEvents[15][k], ADCampYLandvals[0], ADCampYLandvals[1], ADCampYLandvals[2], ADCampYLandvals[3], ADCampYLandvals[4], ADCampYLandvals[5]);
+    Double_t pneutneutaay = TMath::Landau(NeutEvents[15][k], ADCampYLandvals[0], ADCampYLandvals[1]);
     Double_t pneutnnbaraay = LandandGauss(NeutEvents[15][k], ADCampYGaussvals[0], ADCampYGaussvals[1], ADCampYGaussvals[2], ADCampYGaussvals[3], ADCampYGaussvals[4], ADCampYGaussvals[5]);
     _ll_neutaay = log(pneutnnbaraay/pneutneutaay);
 
@@ -952,16 +867,19 @@ std::cout<<"gets here\n\n";
     // U plane integrated waveform log likelihoods
     Double_t pneutneutwfu = ExpandGauss(NeutEvents[17][k],WFintUNeutExpVal[0],WFintUNeutExpVal[1],WFintUNeutExpVal[2],WFintUNeutExpVal[3],WFintUNeutExpVal[4]);
     Double_t pneutnnbarwfu = TMath::Gaus(NeutEvents[17][k], WFintUNnbarGaussVals[0], WFintUNnbarGaussVals[1]);
+    if(pneutnnbarwfu==0){pneutnnbarwfu = 4.06461e-305;}
     _ll_neutwfu = log(pneutnnbarwfu/pneutneutwfu);
 
     // V plane integrated waveform log likelihoods
-    Double_t pneutneutwfv = ExpandGaussandGauss(NeutEvents[18][k],WFintVNeutExpVal[0],WFintVNeutExpVal[1],WFintVNeutExpVal[2],WFintVNeutExpVal[3],WFintVNeutExpVal[4],WFintVNeutExpVal[5],WFintVNeutExpVal[6],WFintVNeutExpVal[7]);
+    Double_t pneutneutwfv = ExpandGauss(NeutEvents[18][k],WFintVNeutExpVal[0],WFintVNeutExpVal[1],WFintVNeutExpVal[2],WFintVNeutExpVal[3],WFintVNeutExpVal[4]);
     Double_t pneutnnbarwfv = TMath::Gaus(NeutEvents[18][k], WFintVNnbarGaussVals[0], WFintVNnbarGaussVals[1]);
+    if(pneutnnbarwfv==0){pneutnnbarwfv = 4.06461e-305;}
     _ll_neutwfv = log(pneutnnbarwfv/pneutneutwfv);
 
     // Y plane integrated waveform log likelihoods
     Double_t pneutneutwfy = ExpandGauss(NeutEvents[19][k],WFintYNeutExpVal[0],WFintYNeutExpVal[1],WFintYNeutExpVal[2],WFintYNeutExpVal[3],WFintYNeutExpVal[4]);
     Double_t pneutnnbarwfy = TMath::Gaus(NeutEvents[19][k], WFintYNnbarGaussVals[0], WFintYNnbarGaussVals[1]);
+    if(pneutnnbarwfy==0){pneutnnbarwfy = 4.06461e-305;}
     _ll_neutwfy = log(pneutnnbarwfy/pneutneutwfy);
 
     // Apply cuts on the log likelihoods - TO BE REPLACED BY LUKES OPTIMISER
@@ -973,7 +891,7 @@ std::cout<<"gets here\n\n";
 
   _ll_neut_tree->Write();
   OutFile3->Close();
-
+*/
 /*
 std::cout<<removednnbar<<"  "<<removedneut<<std::endl;
 
