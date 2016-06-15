@@ -77,21 +77,21 @@ void TMVAShowerClass( TString myMethodList = "" )
    std::map<std::string,int> Use;
 
    // --- Cut optimisation
-   Use["Cuts"]            = 0;
+   Use["Cuts"]            = 1;
    Use["CutsD"]           = 0;
    Use["CutsPCA"]         = 0;
    Use["CutsGA"]          = 0;
    Use["CutsSA"]          = 0;
    // 
    // --- 1-dimensional likelihood ("naive Bayes estimator")
-   Use["Likelihood"]      = 0;
+   Use["Likelihood"]      = 1;
    Use["LikelihoodD"]     = 0; // the "D" extension indicates decorrelated input variables (see option strings)
    Use["LikelihoodPCA"]   = 0; // the "PCA" extension indicates PCA-transformed input variables (see option strings)
    Use["LikelihoodKDE"]   = 0;
    Use["LikelihoodMIX"]   = 0;
    //
    // --- Mutidimensional likelihood and Nearest-Neighbour methods
-   Use["PDERS"]           = 0;
+   Use["PDERS"]           = 1;
    Use["PDERSD"]          = 0;
    Use["PDERSPCA"]        = 0;
    Use["PDEFoam"]         = 0;
@@ -114,7 +114,7 @@ void TMVAShowerClass( TString myMethodList = "" )
    Use["FDA_MCMT"]        = 0;
    //
    // --- Neural Networks (all are feed-forward Multilayer Perceptrons)
-   Use["MLP"]             = 0; // Recommended ANN
+   Use["MLP"]             = 1; // Recommended ANN
    Use["MLPBFGS"]         = 0; // Recommended ANN with optional training method
    Use["MLPBNN"]          = 0; // Recommended ANN with BFGS training method and bayesian regulator
    Use["CFMlpANN"]        = 0; // Depreciated ANN from ALEPH
@@ -185,37 +185,41 @@ void TMVAShowerClass( TString myMethodList = "" )
    // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
    // [all types of expressions that can also be parsed by TTree::Draw( "expression" )]
    // ADD ALL THE RELEVANT VARIABLES
-   factory->AddVariable( "hitNoY", "Number of Hits", "", 'i' );
-   factory->AddVariable( "TDCstdY", "TDC St Dev", "0.5#mus", 'F' );
-   factory->AddVariable( "TDCiqrY", "TDC IQ Range", "0.5#mus", 'F' );
-   factory->AddVariable( "ADCampY", "ADC Amplitude", "arb", 'F' );
-   factory->AddVariable( "WFintY", "Integrated Waveform", "arb", 'F' );
-   factory->AddVariable( "MeanampY", "Mean Amplitude", "arb", 'F' );
-   factory->AddVariable( "MeanintY", "Mean Integrated Waveform", "arb", 'F' );
-   factory->AddVariable( "LowDenY", "# Hits (10-20ADC)", "", 'i' );
-   factory->AddVariable( "HiDenY", "# Hits (>20ADC)", "", 'i' );
-   factory->AddVariable( "MeanRMSY", "Mean RMS", "0.5#mus", 'F' );
-   factory->AddVariable( "MeanMultY", "Mean Multiplicity", "", 'F' );
-   factory->AddVariable( "WirestdY", "Wire St Dev", "Channel #", 'F' );
-   factory->AddVariable( "WireiqrY", "Wire IQ Range", "Channel #", 'F' );
+   factory->AddVariable( "hitNoV", "Number of Hits", "", 'i' );
+   factory->AddVariable( "TDCstdV", "TDC St Dev", "0.5#mus", 'F' );
+   factory->AddVariable( "TDCiqrV", "TDC IQ Range", "0.5#mus", 'F' );
+   factory->AddVariable( "ADCampV", "ADC Amplitude", "arb", 'F' );
+   factory->AddVariable( "WFintV", "Integrated Waveform", "arb", 'F' );
+   factory->AddVariable( "MeanampV", "Mean Amplitude", "arb", 'F' );
+   factory->AddVariable( "MeanintV", "Mean Integrated Waveform", "arb", 'F' );
+   factory->AddVariable( "LowDenV", "# Hits (10-20ADC)", "", 'i' );
+   factory->AddVariable( "HiDenV", "# Hits (>20ADC)", "", 'i' );
+   factory->AddVariable( "MeanRMSV", "Mean RMS", "0.5#mus", 'F' );
+   factory->AddVariable( "MeanMultV", "Mean Multiplicity", "", 'F' );
+   factory->AddVariable( "WirestdV", "Wire St Dev", "Channel #", 'F' );
+   factory->AddVariable( "WireiqrV", "Wire IQ Range", "Channel #", 'F' );
+   factory->AddVariable( "NumMultV", "# Increasing Hit Multiplicity", "", 'i' );
 
    // Read training and test data
    // (it is also possible to use ASCII format as input -> see TMVA Users Guide)
-   TString ename = "./allsmallsignal.root";
-   TString b1name = "./allsmallBNBbkg.root";
-   TString b2name = "./allsmallYbkg.root";
+   TString ename = "./BNBbkg_run2.root";
+   //TString e2name = "./allsmallYbkg.root";
+   TString b1name = "./BNBsig_run2.root";
+   //TString b2name = "./smallsignal_cut.root";
    
    TFile *einput = TFile::Open( ename );
+   //TFile *e2input = TFile::Open( e2name );
    TFile *b1input = TFile::Open( b1name );
-   TFile *b2input = TFile::Open( b2name );
+   //TFile *b2input = TFile::Open( b2name );
    
    std::cout << "--- TMVAClassification       : Using input file: " << einput->GetName() << std::endl;
    std::cout << "--- TMVAClassification       : Using input file: " << b1input->GetName() << std::endl;
     
    // --- Register the training and test trees
-   TTree *signal     = (TTree*)einput->Get("ch_tree");
-   TTree *background1 = (TTree*)b1input->Get("ch_tree");
-   TTree *background2 = (TTree*)b2input->Get("smallY_bkg_tree_rnm");
+   TTree *signal     = (TTree*)einput->Get("bkg_tree");
+   //TTree *signal2    = (TTree*)e2input->Get("smallY_bkg_tree_rnm");
+   TTree *background1 = (TTree*)b1input->Get("sig_tree");
+   //TTree *background2 = (TTree*)b2input->Get("ch_tree");
    
    // global event weights per tree (see below for setting event-wise weights)
    Double_t signalWeight     = 1.0;
@@ -223,8 +227,9 @@ void TMVAShowerClass( TString myMethodList = "" )
    
    // You can add an arbitrary number of signal or background trees
    factory->AddSignalTree    ( signal,     signalWeight     );
+   //factory->AddSignalTree    ( signal2,     signalWeight     );
    factory->AddBackgroundTree( background1, backgroundWeight );
-   factory->AddBackgroundTree( background2, backgroundWeight );
+   //factory->AddBackgroundTree( background2, backgroundWeight );
    
    // To give different trees for training and testing, do as follows:
    //    factory->AddSignalTree( signalTrainingTree, signalTrainWeight, "Training" );
@@ -271,8 +276,8 @@ void TMVAShowerClass( TString myMethodList = "" )
    //factory->SetBackgroundWeightExpression( "weight" );
 
    // Apply additional cuts on the signal and background samples (can be different)
-   TCut mycuts = "";//"Energy<500"; // CHECK MACROS FOR OTHER CUTS
-   TCut mycutb = "";//"showerNo==0";
+   TCut mycuts = "";//"ADCamp<1000&&Meanamp<1000";//"Energy<500"; // CHECK MACROS FOR OTHER CUTS
+   TCut mycutb = "";//"ADCamp<1000&&Meanamp<1000";//"showerNo==0";
 
    // Tell the factory how to use the training and testing events
    //
@@ -443,7 +448,7 @@ void TMVAShowerClass( TString myMethodList = "" )
    // LOOK UP OPTIONS
    if (Use["BDT"])  // Adaptive Boost
       factory->BookMethod( TMVA::Types::kBDT, "BDT",
-                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20:CreateMVAPdfs=True" );
 
    if (Use["BDTB"]) // Bagging
       factory->BookMethod( TMVA::Types::kBDT, "BDTB",
